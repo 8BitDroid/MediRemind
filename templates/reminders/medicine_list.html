@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Medicines — Smart Medicine Reminder{% endblock %}
+
+{% block navbar %}
+<nav class="navbar-custom">
+    <div class="container d-flex justify-content-between align-items-center">
+        <a href="{% url 'dashboard' %}" class="navbar-brand-custom">
+            <span class="brand-icon"><i class="bi bi-capsule"></i></span>
+            MedRemind
+        </a>
+        <div class="d-flex align-items-center gap-1">
+            <a href="{% url 'dashboard' %}" class="nav-link-custom" id="nav-dashboard"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+            <a href="{% url 'medicine_list' %}" class="nav-link-custom active" id="nav-medicines"><i class="bi bi-capsule"></i> Medicines</a>
+            <a href="{% url 'history' %}" class="nav-link-custom" id="nav-history"><i class="bi bi-clock-history"></i> History</a>
+            <a href="{% url 'profile' %}" class="nav-link-custom" id="nav-profile"><i class="bi bi-person-circle"></i> Profile</a>
+            <a href="{% url 'logout' %}" class="nav-link-custom" id="nav-logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <div class="container">
+        <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+            <div>
+                <h1 class="page-title">My Medicines</h1>
+                <p class="page-subtitle">Manage all your medicine schedules in one place</p>
+            </div>
+            <a href="{% url 'medicine_add' %}" class="btn-primary-custom" id="add-medicine-btn">
+                <i class="bi bi-plus-lg"></i> Add Medicine
+            </a>
+        </div>
+
+        {% if medicines %}
+        <div class="content-card slide-up">
+            <div class="content-card-body" style="padding: 0;">
+                <div class="table-responsive">
+                    <table class="medicine-table">
+                        <thead>
+                            <tr>
+                                <th>Medicine</th>
+                                <th>Dosage</th>
+                                <th>Frequency</th>
+                                <th>Schedule</th>
+                                <th>Meal</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for medicine in medicines %}
+                            <tr id="medicine-row-{{ medicine.id }}">
+                                <td>
+                                    <div class="medicine-name">
+                                        {% if medicine.image %}
+                                            <img src="{{ medicine.image.url }}" alt="{{ medicine.name }}" class="rounded-2 border me-2 shadow-sm" style="width: 42px; height: 42px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="pill-icon"><i class="bi bi-capsule"></i></div>
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ medicine.name }}</strong>
+                                            {% if medicine.notes %}
+                                            <br><small style="color: var(--dark-500);">{{ medicine.notes|truncatewords:6 }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>{{ medicine.dosage }}</td>
+                                <td>{{ medicine.get_frequency_display }}</td>
+                                <td>
+                                    <span class="dose-time-badge" style="display: inline-block; margin: 2px 0;">{{ medicine.time_slot_1|time:"h:i A" }}</span>
+                                    {% if medicine.time_slot_2 %}
+                                    <span class="dose-time-badge" style="display: inline-block; margin: 2px 0;">{{ medicine.time_slot_2|time:"h:i A" }}</span>
+                                    {% endif %}
+                                    {% if medicine.time_slot_3 %}
+                                    <span class="dose-time-badge" style="display: inline-block; margin: 2px 0;">{{ medicine.time_slot_3|time:"h:i A" }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ medicine.get_meal_instruction_display }}</td>
+                                <td>
+                                    {% if medicine.is_active %}
+                                    <span><span class="status-dot active"></span>Active</span>
+                                    {% else %}
+                                    <span><span class="status-dot inactive"></span>Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'medicine_edit' medicine.pk %}" class="btn-success-custom btn-sm-custom" title="Edit" id="edit-medicine-{{ medicine.id }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'medicine_delete' medicine.pk %}" class="btn-danger-custom btn-sm-custom" title="Delete" id="delete-medicine-{{ medicine.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="content-card">
+            <div class="content-card-body">
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="bi bi-capsule"></i></div>
+                    <h5>No Medicines Added Yet</h5>
+                    <p>Start by adding your first medicine to create your personalized reminder schedule.</p>
+                    <a href="{% url 'medicine_add' %}" class="btn-primary-custom" id="empty-add-medicine">
+                        <i class="bi bi-plus-lg"></i> Add Your First Medicine
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

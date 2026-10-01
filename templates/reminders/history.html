@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dose History & Adherence — Smart Medicine Reminder{% endblock %}
+
+{% block navbar %}
+<nav class="navbar-custom">
+    <div class="container d-flex justify-content-between align-items-center">
+        <a href="{% url 'dashboard' %}" class="navbar-brand-custom">
+            <span class="brand-icon"><i class="bi bi-capsule"></i></span>
+            MedRemind
+        </a>
+        <div class="d-flex align-items-center gap-1">
+            <a href="{% url 'dashboard' %}" class="nav-link-custom" id="nav-dashboard"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+            <a href="{% url 'medicine_list' %}" class="nav-link-custom" id="nav-medicines"><i class="bi bi-capsule"></i> Medicines</a>
+            <a href="{% url 'history' %}" class="nav-link-custom active" id="nav-history"><i class="bi bi-clock-history"></i> History</a>
+            <a href="{% url 'profile' %}" class="nav-link-custom" id="nav-profile"><i class="bi bi-person-circle"></i> Profile</a>
+            <a href="{% url 'logout' %}" class="nav-link-custom" id="nav-logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <div class="container">
+        <!-- Header -->
+        <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+            <div>
+                <h1 class="page-title">Dose History & Adherence</h1>
+                <p class="page-subtitle">Track your medication compliance records over time.</p>
+            </div>
+            <div>
+                <a href="{% url 'export_history' %}" class="btn btn-outline-primary fw-bold shadow-sm">
+                    <i class="bi bi-download me-1"></i> Download History (CSV)
+                </a>
+            </div>
+        </div>
+
+        <!-- Overview Stats Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="stat-card primary">
+                    <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+                    <div class="stat-value">{{ total_logs }}</div>
+                    <div class="stat-label">Total Scheduled</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card success">
+                    <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+                    <div class="stat-value text-success">{{ taken_count }}</div>
+                    <div class="stat-label">Doses Taken</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card danger">
+                    <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
+                    <div class="stat-value text-danger">{{ missed_count }}</div>
+                    <div class="stat-label">Doses Missed</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card warning">
+                    <div class="stat-icon"><i class="bi bi-pie-chart-fill"></i></div>
+                    <div class="stat-value text-warning">{{ adherence }}%</div>
+                    <div class="stat-label">Adherence Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="glass-card p-3 mb-4">
+            <form method="get" class="row g-3 align-items-center">
+                <div class="col-md-3">
+                    <label class="form-label small font-weight-600 mb-1">Time Period</label>
+                    <select name="days" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="7" {% if days_filter == '7' %}selected{% endif %}>Last 7 Days</option>
+                        <option value="14" {% if days_filter == '14' %}selected{% endif %}>Last 14 Days</option>
+                        <option value="30" {% if days_filter == '30' %}selected{% endif %}>Last 30 Days</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small font-weight-600 mb-1">Filter Medicine</label>
+                    <select name="medicine" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="all" {% if medicine_filter == 'all' %}selected{% endif %}>All Medicines</option>
+                        {% for med in user_medicines %}
+                            <option value="{{ med.id }}" {% if medicine_filter == med.id|stringformat:"s" %}selected{% endif %}>{{ med.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small font-weight-600 mb-1">Filter Status</label>
+                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+                        <option value="taken" {% if status_filter == 'taken' %}selected{% endif %}>Taken</option>
+                        <option value="missed" {% if status_filter == 'missed' %}selected{% endif %}>Missed</option>
+                        <option value="skipped" {% if status_filter == 'skipped' %}selected{% endif %}>Skipped</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <a href="{% url 'history' %}" class="btn btn-sm btn-outline-secondary w-100 mt-4">Reset Filters</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Log Table -->
+        <div class="glass-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Detailed Log Entries</h5>
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="badge bg-light text-dark border">{{ logs|length }} records</span>
+                    <a href="{% url 'export_history' %}" class="btn btn-sm btn-success">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
+                    </a>
+                </div>
+            </div>
+
+            {% if logs %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle custom-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Medicine</th>
+                            <th>Dosage</th>
+                            <th>Status</th>
+                            <th>Recorded At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ log.scheduled_date|date:"D, M d, Y" }}</div>
+                                <div class="small text-muted"><i class="bi bi-clock me-1"></i>{{ log.scheduled_time|time:"h:i A" }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if log.medicine.image %}
+                                        <img src="{{ log.medicine.image.url }}" alt="{{ log.medicine.name }}" class="rounded border shadow-sm" style="width: 36px; height: 36px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-primary-soft text-primary rounded border d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                            <i class="bi bi-capsule"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ log.medicine.name }}</div>
+                                        <small class="text-muted">{{ log.medicine.notes|default:"" }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ log.medicine.dosage }}</span>
+                            </td>
+                            <td>
+                                {% if log.status == 'taken' %}
+                                    <span class="badge bg-success-soft text-success px-3 py-1 rounded-pill"><i class="bi bi-check-circle-fill me-1"></i> Taken</span>
+                                {% elif log.status == 'missed' %}
+                                    <span class="badge bg-danger-soft text-danger px-3 py-1 rounded-pill"><i class="bi bi-x-circle-fill me-1"></i> Missed</span>
+                                {% elif log.status == 'skipped' %}
+                                    <span class="badge bg-secondary text-white px-3 py-1 rounded-pill"><i class="bi bi-dash-circle-fill me-1"></i> Skipped</span>
+                                {% else %}
+                                    <span class="badge bg-warning-soft text-warning px-3 py-1 rounded-pill"><i class="bi bi-clock-history me-1"></i> Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.taken_at %}
+                                    <span class="small text-muted"><i class="bi bi-check2 me-1"></i>{{ log.taken_at|date:"M d, h:i A" }}</span>
+                                {% else %}
+                                    <span class="small text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-clock-history text-muted" style="font-size: 3rem;"></i>
+                <h5 class="mt-3 text-muted">No dose records found</h5>
+                <p class="small text-muted">Try changing the filters above to see more records.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

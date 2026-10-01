@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard — Smart Medicine Reminder{% endblock %}
+
+{% block navbar %}
+<nav class="navbar-custom">
+    <div class="container d-flex justify-content-between align-items-center">
+        <a href="{% url 'dashboard' %}" class="navbar-brand-custom">
+            <span class="brand-icon"><i class="bi bi-capsule"></i></span>
+            MedRemind
+        </a>
+        <div class="d-flex align-items-center gap-1">
+            <a href="{% url 'dashboard' %}" class="nav-link-custom active" id="nav-dashboard"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+            <a href="{% url 'medicine_list' %}" class="nav-link-custom" id="nav-medicines"><i class="bi bi-capsule"></i> Medicines</a>
+            <a href="{% url 'history' %}" class="nav-link-custom" id="nav-history"><i class="bi bi-clock-history"></i> History</a>
+            <a href="{% url 'profile' %}" class="nav-link-custom" id="nav-profile"><i class="bi bi-person-circle"></i> Profile</a>
+            <a href="{% url 'logout' %}" class="nav-link-custom" id="nav-logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <p class="greeting-text mb-1">
+                    👋 Good {% now "H" as current_hour %}{% if current_hour|add:"0" < 12 %}morning{% elif current_hour|add:"0" < 17 %}afternoon{% else %}evening{% endif %}, 
+                    <span class="user-name">{{ user.first_name|default:user.username }}</span>
+                </p>
+                <h1 class="page-title">Today's Dashboard</h1>
+                <p class="page-subtitle"><i class="bi bi-calendar3"></i> {{ today|date:"l, F j, Y" }}</p>
+            </div>
+            <a href="{% url 'medicine_add' %}" class="btn-primary-custom" id="add-medicine-btn">
+                <i class="bi bi-plus-lg"></i> Add Medicine
+            </a>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="stat-card primary fade-in">
+                    <div class="stat-icon"><i class="bi bi-capsule"></i></div>
+                    <div class="stat-value">{{ active_medicines }}</div>
+                    <div class="stat-label">Active Medicines</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card success fade-in" style="animation-delay: 0.1s;">
+                    <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+                    <div class="stat-value">{{ taken_today }}</div>
+                    <div class="stat-label">Taken Today</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card warning fade-in" style="animation-delay: 0.2s;">
+                    <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+                    <div class="stat-value">{{ pending_today }}</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="stat-card danger fade-in" style="animation-delay: 0.3s;">
+                    <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
+                    <div class="stat-value">{{ missed_today }}</div>
+                    <div class="stat-label">Missed</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Main Dose List -->
+            <div class="col-lg-8">
+                <div class="content-card slide-up">
+                    <div class="content-card-header">
+                        <h5><i class="bi bi-list-check me-2" style="color: var(--primary);"></i>Today's Schedule</h5>
+                        <span class="dose-status-badge pending">{{ total_today }} doses</span>
+                    </div>
+                    <div class="content-card-body">
+                        {% if todays_doses %}
+                            {% for dose in todays_doses %}
+                            <div class="dose-card {{ dose.status }}" id="dose-card-{{ dose.id }}">
+                                <div class="dose-info">
+                                    {% if dose.medicine.image %}
+                                        <img src="{{ dose.medicine.image.url }}" alt="{{ dose.medicine.name }}" 
+                                             class="rounded-3 me-2 border shadow-sm cursor-pointer" 
+                                             style="width: 56px; height: 56px; object-fit: cover; cursor: pointer;" 
+                                             title="Click to enlarge photo" 
+                                             onclick="showPillModal('{{ dose.medicine.image.url }}', '{{ dose.medicine.name }}', '{{ dose.medicine.dosage }}')">
+                                    {% endif %}
+
+                                    <div class="dose-time-badge">
+                                        {{ dose.scheduled_time|time:"h:i A" }}
+                                    </div>
+                                    <div class="dose-details">
+                                        <h6>{{ dose.medicine.name }}</h6>
+                                        <span class="dose-meta">
+                                            <i class="bi bi-capsule"></i> {{ dose.medicine.dosage }}
+                                            &nbsp;·&nbsp;
+                                            <i class="bi bi-clock"></i> {{ dose.medicine.get_meal_instruction_display }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="dose-actions">
+                                    {% if dose.status == 'pending' %}
+                                        <a href="{% url 'mark_dose' dose.id 'taken' %}" class="btn-success-custom btn-sm-custom" title="Mark as Taken" id="dose-take-{{ dose.id }}">
+                                            <i class="bi bi-check-lg"></i> Taken
+                                        </a>
+                                        <a href="{% url 'mark_dose' dose.id 'missed' %}" class="btn-danger-custom btn-sm-custom" title="Mark as Missed" id="dose-miss-{{ dose.id }}">
+                                            <i class="bi bi-x-lg"></i> Missed
+                                        </a>
+                                        <a href="{% url 'mark_dose' dose.id 'skipped' %}" class="btn-warning-custom btn-sm-custom" title="Skip" id="dose-skip-{{ dose.id }}">
+                                            <i class="bi bi-skip-forward"></i>
+                                        </a>
+                                    {% else %}
+                                        <span class="dose-status-badge {{ dose.status }}">
+                                            {% if dose.status == 'taken' %}✅ Taken{% elif dose.status == 'missed' %}❌ Missed{% elif dose.status == 'skipped' %}⏭️ Skipped{% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <div class="empty-state-icon"><i class="bi bi-capsule"></i></div>
+                                <h5>No Medicines Scheduled</h5>
+                                <p>You haven't added any medicines yet. Add your first medicine to get started!</p>
+                                <a href="{% url 'medicine_add' %}" class="btn-primary-custom" id="empty-add-medicine">
+                                    <i class="bi bi-plus-lg"></i> Add Your First Medicine
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Adherence Ring -->
+                <div class="content-card mb-4 slide-up" style="animation-delay: 0.2s;">
+                    <div class="content-card-header">
+                        <h5><i class="bi bi-graph-up me-2" style="color: var(--secondary);"></i>Weekly Adherence</h5>
+                    </div>
+                    <div class="content-card-body text-center">
+                        <div class="adherence-ring">
+                            <svg width="120" height="120" viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="52" fill="none" stroke="#E2E8F0" stroke-width="10"/>
+                                <circle cx="60" cy="60" r="52" fill="none" 
+                                    stroke="{% if adherence_rate >= 80 %}#10B981{% elif adherence_rate >= 50 %}#F59E0B{% else %}#EF4444{% endif %}" 
+                                    stroke-width="10" 
+                                    stroke-dasharray="{{ adherence_rate|floatformat:0 }}% 999"
+                                    stroke-dashoffset="0"
+                                    stroke-linecap="round"
+                                    style="stroke-dasharray: {% widthratio adherence_rate 100 327 %} 327;"/>
+                            </svg>
+                            <div class="ring-text">
+                                <div class="ring-value">{{ adherence_rate }}%</div>
+                                <div class="ring-label">Last 7 Days</div>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.85rem; color: var(--dark-500);">
+                            {% if adherence_rate >= 80 %}
+                                🎉 Great job! Keep up the consistency.
+                            {% elif adherence_rate >= 50 %}
+                                💪 Good progress. Aim higher!
+                            {% else %}
+                                ⚠️ Try to improve your adherence.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="content-card slide-up" style="animation-delay: 0.3s;">
+                    <div class="content-card-header">
+                        <h5><i class="bi bi-lightning me-2" style="color: var(--accent);"></i>Quick Actions</h5>
+                    </div>
+                    <div class="content-card-body">
+                        <a href="{% url 'medicine_add' %}" class="d-flex align-items-center gap-3 p-3 rounded-3 mb-2 text-decoration-none" style="background: var(--primary-bg); color: var(--primary); transition: var(--transition);" id="quick-add-medicine">
+                            <i class="bi bi-plus-circle-fill fs-5"></i>
+                            <div>
+                                <strong style="font-size: 0.9rem;">Add Medicine</strong>
+                                <p style="font-size: 0.8rem; margin: 0; opacity: 0.7;">Schedule a new medicine</p>
+                            </div>
+                        </a>
+                        <a href="{% url 'medicine_list' %}" class="d-flex align-items-center gap-3 p-3 rounded-3 mb-2 text-decoration-none" style="background: #ECFDF5; color: var(--secondary-dark); transition: var(--transition);" id="quick-view-medicines">
+                            <i class="bi bi-list-ul fs-5"></i>
+                            <div>
+                                <strong style="font-size: 0.9rem;">View All Medicines</strong>
+                                <p style="font-size: 0.8rem; margin: 0; opacity: 0.7;">Manage your schedules</p>
+                            </div>
+                        </a>
+                        <a href="{% url 'history' %}" class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none" style="background: #FFFBEB; color: #92400E; transition: var(--transition);" id="quick-view-history">
+                            <i class="bi bi-clock-history fs-5"></i>
+                            <div>
+                                <strong style="font-size: 0.9rem;">View History</strong>
+                                <p style="font-size: 0.8rem; margin: 0; opacity: 0.7;">Check your dose log</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Elder Visual Recognition Photo Modal -->
+<div class="modal fade" id="pillPhotoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="pillModalTitle">Medicine Visual Identification</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <img id="pillModalImg" src="" alt="Medicine Photo" class="img-fluid rounded-3 border shadow-sm mb-3" style="max-height: 350px; width: 100%; object-fit: contain; background: #f8fafc;">
+                <h4 id="pillModalMedName" class="fw-bold text-dark mb-1"></h4>
+                <div id="pillModalDosage" class="badge bg-primary-soft text-primary px-3 py-2 fs-6 rounded-pill"></div>
+            </div>
+            <div class="modal-footer bg-light justify-content-center">
+                <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showPillModal(imgUrl, name, dosage) {
+        document.getElementById('pillModalImg').src = imgUrl;
+        document.getElementById('pillModalMedName').textContent = name;
+        document.getElementById('pillModalDosage').textContent = dosage;
+        const modal = new bootstrap.Modal(document.getElementById('pillPhotoModal'));
+        modal.show();
+    }
+
+    // Auto-refresh dashboard every 60 seconds
+    setTimeout(() => {
+        window.location.reload();
+    }, 60000);
+</script>
+{% endblock %}
+

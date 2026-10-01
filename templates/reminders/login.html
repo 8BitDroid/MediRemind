@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login — Smart Medicine Reminder{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card fade-in">
+        <div class="auth-logo">
+            <div class="brand-icon-lg"><i class="bi bi-capsule"></i></div>
+            <h2>Welcome Back</h2>
+            <p>Login to manage your medicine reminders</p>
+        </div>
+
+        <form method="POST" action="{% url 'login' %}" id="login-form">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="login-username">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="Enter your username" required id="login-username" autofocus>
+            </div>
+
+            <div class="mb-4">
+                <label for="login-password">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Enter your password" required id="login-password">
+            </div>
+
+            <button type="submit" class="btn-primary-custom w-100 justify-content-center" id="login-submit-btn">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+            </button>
+        </form>
+
+        <div class="auth-divider">
+            <span>Don't have an account?</span>
+        </div>
+
+        <a href="{% url 'register' %}" class="btn-secondary-custom w-100 justify-content-center" id="login-register-link">
+            <i class="bi bi-person-plus"></i> Sign Up Free
+        </a>
+    </div>
+</div>
+{% endblock %}

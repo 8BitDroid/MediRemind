@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} — Smart Medicine Reminder{% endblock %}
+
+{% block navbar %}
+<nav class="navbar-custom">
+    <div class="container d-flex justify-content-between align-items-center">
+        <a href="{% url 'dashboard' %}" class="navbar-brand-custom">
+            <span class="brand-icon"><i class="bi bi-capsule"></i></span>
+            MedRemind
+        </a>
+        <div class="d-flex align-items-center gap-1">
+            <a href="{% url 'dashboard' %}" class="nav-link-custom" id="nav-dashboard"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+            <a href="{% url 'medicine_list' %}" class="nav-link-custom active" id="nav-medicines"><i class="bi bi-capsule"></i> Medicines</a>
+            <a href="{% url 'history' %}" class="nav-link-custom" id="nav-history"><i class="bi bi-clock-history"></i> History</a>
+            <a href="{% url 'profile' %}" class="nav-link-custom" id="nav-profile"><i class="bi bi-person-circle"></i> Profile</a>
+            <a href="{% url 'logout' %}" class="nav-link-custom" id="nav-logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Back button -->
+                <div class="mb-4">
+                    <a href="{% url 'medicine_list' %}" class="text-decoration-none text-muted">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Medicines List
+                    </a>
+                </div>
+
+                <!-- Form Card -->
+                <div class="glass-card">
+                    <div class="p-4 border-bottom d-flex align-items-center gap-3">
+                        <div class="stat-icon primary" style="width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+                            <i class="bi bi-capsule"></i>
+                        </div>
+                        <div>
+                            <h2 class="h4 mb-1 fw-bold">{{ title }}</h2>
+                            <p class="text-muted small mb-0">Fill in the details below to configure schedule & notification settings.</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4">
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <form method="post" enctype="multipart/form-data" novalidate>
+                            {% csrf_token %}
+
+                            <!-- Basic Details -->
+                            <div class="mb-4">
+                                <h5 class="fw-bold mb-3"><i class="bi bi-info-circle text-primary me-2"></i>Basic Information</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label font-weight-600" for="{{ form.name.id_for_label }}">Medicine Name <span class="text-danger">*</span></label>
+                                        {{ form.name }}
+                                        {% if form.name.errors %}
+                                            <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label font-weight-600" for="{{ form.dosage.id_for_label }}">Dosage / Strength <span class="text-danger">*</span></label>
+                                        {{ form.dosage }}
+                                        {% if form.dosage.errors %}
+                                            <div class="text-danger small mt-1">{{ form.dosage.errors.0 }}</div>
+                                        {% endif %}
+                                        <small class="text-muted">e.g., 500mg, 1 tablet, 10ml</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label font-weight-600" for="{{ form.frequency.id_for_label }}">Frequency</label>
+                                        {{ form.frequency }}
+                                        {% if form.frequency.errors %}
+                                            <div class="text-danger small mt-1">{{ form.frequency.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label font-weight-600" for="{{ form.meal_instruction.id_for_label }}">Meal Relation</label>
+                                        {{ form.meal_instruction }}
+                                        {% if form.meal_instruction.errors %}
+                                            <div class="text-danger small mt-1">{{ form.meal_instruction.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Senior Visual Assistance: Medicine Image -->
+                            <div class="mb-4">
+                                <h5 class="fw-bold mb-3"><i class="bi bi-camera text-primary me-2"></i>Medicine Photo (Visual Identification for Elders)</h5>
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-7">
+                                        <label class="form-label font-weight-600" for="{{ form.image.id_for_label }}">Upload Pill, Box, or Syrup Photo</label>
+                                        {{ form.image }}
+                                        {% if form.image.errors %}
+                                            <div class="text-danger small mt-1">{{ form.image.errors.0 }}</div>
+                                        {% endif %}
+                                        <small class="text-muted d-block mt-1"><i class="bi bi-info-circle me-1"></i>Caregivers and elders can take a picture using camera or upload a saved photo for easy visual recognition.</small>
+                                    </div>
+                                    <div class="col-md-5 text-center">
+                                        <label class="form-label font-weight-600 d-block">Photo Preview</label>
+                                        <div id="image-preview-container" class="p-2 border rounded-3 bg-light d-flex align-items-center justify-content-center" style="min-height: 110px;">
+                                            {% if medicine.image %}
+                                                <img id="image-preview" src="{{ medicine.image.url }}" alt="{{ medicine.name }}" class="img-fluid rounded shadow-sm" style="max-height: 100px; object-fit: cover;">
+                                            {% else %}
+                                                <div id="image-placeholder" class="text-muted text-center">
+                                                    <i class="bi bi-image" style="font-size: 2rem;"></i>
+                                                    <div class="small">No photo selected</div>
+                                                </div>
+                                                <img id="image-preview" src="" alt="Preview" class="img-fluid rounded shadow-sm d-none" style="max-height: 100px; object-fit: cover;">
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <!-- Schedule & Timing -->
+                            <div class="mb-4">
+                                <h5 class="fw-bold mb-3"><i class="bi bi-alarm text-primary me-2"></i>Schedule & Timing</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label font-weight-600" for="{{ form.time_slot_1.id_for_label }}">First Dose Time <span class="text-danger">*</span></label>
+                                        {{ form.time_slot_1 }}
+                                        {% if form.time_slot_1.errors %}
+                                            <div class="text-danger small mt-1">{{ form.time_slot_1.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label font-weight-600" for="{{ form.time_slot_2.id_for_label }}">Second Dose Time (Optional)</label>
+                                        {{ form.time_slot_2 }}
+                                        {% if form.time_slot_2.errors %}
+                                            <div class="text-danger small mt-1">{{ form.time_slot_2.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label font-weight-600" for="{{ form.time_slot_3.id_for_label }}">Third Dose Time (Optional)</label>
+                                        {{ form.time_slot_3 }}
+                                        {% if form.time_slot_3.errors %}
+                                            <div class="text-danger small mt-1">{{ form.time_slot_3.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label font-weight-600" for="{{ form.start_date.id_for_label }}">Start Date <span class="text-danger">*</span></label>
+                                        {{ form.start_date }}
+                                        {% if form.start_date.errors %}
+                                            <div class="text-danger small mt-1">{{ form.start_date.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label font-weight-600" for="{{ form.end_date.id_for_label }}">End Date (Optional)</label>
+                                        {{ form.end_date }}
+                                        {% if form.end_date.errors %}
+                                            <div class="text-danger small mt-1">{{ form.end_date.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Notes & Active status -->
+                            <div class="mb-4">
+                                <h5 class="fw-bold mb-3"><i class="bi bi-file-text text-primary me-2"></i>Additional Notes</h5>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label font-weight-600" for="{{ form.notes.id_for_label }}">Special Notes / Instructions</label>
+                                        {{ form.notes }}
+                                        {% if form.notes.errors %}
+                                            <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check form-switch mt-2">
+                                            {{ form.is_active }}
+                                            <label class="form-check-label font-weight-600" for="{{ form.is_active.id_for_label }}">Active (Reminders enabled)</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit / Cancel -->
+                            <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+                                <a href="{% url 'medicine_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                                <button type="submit" class="btn-primary-custom border-0">
+                                    <i class="bi bi-check2-circle me-1"></i> {{ button_text }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewImage(input) {
+    const preview = document.getElementById('image-preview');
+    const placeholder = document.getElementById('image-placeholder');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.classList.remove('d-none');
+            if (placeholder) placeholder.classList.add('d-none');
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}
+

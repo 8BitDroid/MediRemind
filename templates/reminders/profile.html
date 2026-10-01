@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile — Smart Medicine Reminder{% endblock %}
+
+{% block navbar %}
+<nav class="navbar-custom">
+    <div class="container d-flex justify-content-between align-items-center">
+        <a href="{% url 'dashboard' %}" class="navbar-brand-custom">
+            <span class="brand-icon"><i class="bi bi-capsule"></i></span>
+            MedRemind
+        </a>
+        <div class="d-flex align-items-center gap-1">
+            <a href="{% url 'dashboard' %}" class="nav-link-custom" id="nav-dashboard"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+            <a href="{% url 'medicine_list' %}" class="nav-link-custom" id="nav-medicines"><i class="bi bi-capsule"></i> Medicines</a>
+            <a href="{% url 'history' %}" class="nav-link-custom" id="nav-history"><i class="bi bi-clock-history"></i> History</a>
+            <a href="{% url 'profile' %}" class="nav-link-custom active" id="nav-profile"><i class="bi bi-person-circle"></i> Profile</a>
+            <a href="{% url 'logout' %}" class="nav-link-custom" id="nav-logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Profile Header Card -->
+                <div class="glass-card mb-4 text-center p-4">
+                    <div class="avatar-lg mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #4F46E5, #7C3AED); color: white; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <h2 class="h4 fw-bold mb-1">{{ user.first_name }} {{ user.last_name }}</h2>
+                    <p class="text-muted mb-2"><i class="bi bi-envelope me-1"></i>{{ user.email }}</p>
+                    <div class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill">
+                        <i class="bi bi-shield-check me-1"></i> Member since {{ user.date_joined|date:"F Y" }}
+                    </div>
+                </div>
+
+                <!-- Adherence & Overall Performance -->
+                <div class="glass-card mb-4 p-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Overall Health Adherence</h5>
+                    
+                    <div class="row align-items-center">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="text-center p-3 rounded-4 bg-light border">
+                                <div class="display-4 fw-bold text-primary mb-1">{{ overall_adherence }}%</div>
+                                <div class="text-muted small">Lifetime Adherence Score</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="small font-weight-600">Total Doses Tracked:</span>
+                                <span class="fw-bold">{{ total_doses }}</span>
+                            </div>
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="small font-weight-600 text-success"><i class="bi bi-check-circle me-1"></i>Doses Taken:</span>
+                                <span class="fw-bold text-success">{{ taken_doses }}</span>
+                            </div>
+                            <div class="mb-2 d-flex justify-content-between">
+                                <span class="small font-weight-600 text-danger"><i class="bi bi-x-circle me-1"></i>Doses Missed:</span>
+                                <span class="fw-bold text-danger">{{ missed_doses }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Summary Card -->
+                <div class="glass-card p-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-sliders text-primary me-2"></i>Account & Reminders</h5>
+                    
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item bg-transparent px-0 py-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">Active Medicines Configured</div>
+                                <div class="small text-muted">Medicines currently setup for reminders</div>
+                            </div>
+                            <span class="badge bg-primary rounded-pill fs-6">{{ active_medicines }} / {{ total_medicines }}</span>
+                        </div>
+
+                        <div class="list-group-item bg-transparent px-0 py-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">Audio & Visual Notifications</div>
+                                <div class="small text-muted">Browser alerts and reminder sounds</div>
+                            </div>
+                            <span class="badge bg-success rounded-pill"><i class="bi bi-bell-fill me-1"></i> Enabled</span>
+                        </div>
+
+                        <div class="list-group-item bg-transparent px-0 py-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">Background Scheduler</div>
+                                <div class="small text-muted">Automatic dose generator & checker</div>
+                            </div>
+                            <span class="badge bg-success rounded-pill"><i class="bi bi-cpu-fill me-1"></i> Running</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                        <a href="{% url 'dashboard' %}" class="btn-primary-custom text-white text-decoration-none">
+                            <i class="bi bi-grid-1x2-fill me-1"></i> Go to Dashboard
+                        </a>
+                        <a href="{% url 'logout' %}" class="btn btn-outline-danger">
+                            <i class="bi bi-box-arrow-right me-1"></i> Logout Account
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
