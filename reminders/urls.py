@@ -13,7 +13,7 @@ urlpatterns = [
     path('medicines/<int:pk>/delete/', views.medicine_delete, name='medicine_delete'),
     path('dose/<int:dose_id>/<str:status>/', views.mark_dose, name='mark_dose'),
     path('history/', views.history_view, name='history'),
-    path('history/export/', views.export_history_csv, name='export_history'),
+    path('history/export/', views.export_history_pdf, name='export_history'),
     path('profile/', views.profile_view, name='profile'),
 ]
 
