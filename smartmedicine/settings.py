@@ -26,7 +26,14 @@ SECRET_KEY = 'django-insecure--r0)3=@8qk03z&7a1u%nz79u--3=m(q)*k2t@boavsw5m#-s%t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.vercel.app', 'medi-remind-beige.vercel.app', 'localhost', '127.0.0.1', '*']
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.vercel.app',
+    'https://medi-remind-beige.vercel.app',
+    'http://127.0.0.1',
+    'http://localhost',
+]
 
 
 # Application definition
@@ -44,6 +51,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -117,8 +125,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

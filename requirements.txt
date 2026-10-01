@@ -2,3 +2,4 @@ Django>=5.0
 APScheduler>=3.10.4
 django-apscheduler>=0.3.0
 pillow>=10.0.0
+whitenoise>=6.6.0
